@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>詞語測試</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f7f9;
+      text-align: center;
+      padding: 50px;
+      margin: 0;
+      position: relative;
+      min-height: 100vh;
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 18px;
+      color: #2c3e50;
+      background-color: #fff;
+      padding: 5px 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    #question-number {
+      font-size: 24px;
+      color: #34495e;
+      margin-bottom: 20px;
+    }
+    #word, #meaning {
+      margin: 20px 0;
+      font-size: 24px;
+      color: #34495e;
+    }
+    #speakBtn, #submitBtn, #nextBtn, #restartBtn {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #3498db;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      margin: 5px;
+    }
+    #speakBtn:hover, #submitBtn:hover, #nextBtn:hover, #restartBtn:hover {
+      background-color: #2980b9;
+      transform: scale(1.05);
+    }
+    #speakBtn:active, #submitBtn:active, #nextBtn:active, #restartBtn:active {
+      transform: scale(0.95);
+    }
+    #answer {
+      padding: 10px;
+      width: 200px;
+      font-size: 16px;
+      border: 2px solid #3498db;
+      border-radius: 5px;
+      transition: border-color 0.3s ease;
+    }
+    #answer:focus {
+      outline: none;
+      border-color: #2980b9;
+      box-shadow: 0 0 5px rgba(41, 128, 185, 0.5);
+    }
+    #input-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 20px;
+      display: none;
+    }
+    #hiragana {
+      margin-top: 10px;
+      font-size: 20px;
+      color: #27ae60;
+      display: none;
+    }
+    #review {
+      margin-top: 30px;
+      display: none;
+    }
+    table {
+      width: 80%;
+      margin: 0 auto;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+      font-size: 16px;
+      width: 120px;
+      max-width: 120px;
+      overflow-wrap: break-word;
+    }
+    th {
+      background-color: #ecf0f1;
+    }
+    .question-row {}
+    #nextBtn-container {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      text-align: left;
+    }
+    #error {
+      color: #e74c3c;
+      margin-top: 20px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">得分: 0/10</div>
+  <div id="question">
+    <div id="question-number"></div>
+    <div id="word"></div>
+    <div id="meaning"></div>
+    <div id="input-container">
+      <button id="speakBtn" onclick="speakWord()">發音</button>
+      <input id="answer" type="text" placeholder="輸入答案">
+      <button id="submitBtn" onclick="checkAnswer()">提交</button>
+    </div>
+    <div id="result"></div>
+    <div id="hiragana"></div>
+    <div id="nextBtn-container"><button id="nextBtn" onclick="nextQuestion()">下一題</button></div>
+  </div>
+  <div id="review"></div>
+  <div><button id="restartBtn" onclick="window.location.href='index.html'" style="display: none;">重新選擇類別</button></div>
+  <div id="error"></div>
+
+  <script>
+    let currentData = [];
+    let quizData = [];
+    let currentIndex = 0;
+    let score = 0;
+    let userAnswers = [];
+
+    async function loadQuiz() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const category = urlParams.get('category');
+      if (!category) {
+        showError('未選擇分類！');
+        return;
+      }
+      try {
+        const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets/1rPV6OItEhA9VSRfiUWwem6KNzMUzeSNmDEzaoDIH3FM/values/data?key=AIzaSyDLNfSUG5lZdlF5OJGYSJCWanvQdTSytm0');
+        if (!response.ok) throw new Error('無法獲取數據');
+        const data = await response.json();
+        console.log('API 回應數據:', data);
+        currentData = data.values || [];
+        if (currentData.length === 0) throw new Error('數據為空');
+
+        // 過濾分類並移除第一行（標題行）
+        const filteredData = currentData.slice(1).filter(row => {
+          if (row.length < 5) return false; // 確保每行至少有5列
+          const rowCategory = row[4] ? row[4].trim() : ''; // E列分類，去除空格
+          console.log(`行數據: ${row}, 分類: ${rowCategory}, 目標分類: ${category}`);
+          return rowCategory === category;
+        });
+
+        if (filteredData.length === 0) throw new Error(`分類 ${category} 沒有題目`);
+        console.log(`過濾後數據 (${category}):`, filteredData);
+        quizData = shuffleArray(filteredData).slice(0, 10);
+        if (quizData.length === 0) throw new Error('無足夠題目');
+        showQuestion(currentIndex);
+      } catch (error) {
+        showError(`加載題目失敗: ${error.message}`);
+        console.error('錯誤詳情:', error);
+      }
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function showQuestion(index) {
+      if (index >= quizData.length) {
+        showError('題目索引超出範圍');
+        return;
+      }
+      const row = quizData[index];
+      if (!row || row.length < 5) {
+        showError('題目數據格式錯誤');
+        return;
+      }
+      document.getElementById('question-number').textContent = `${index + 1}/10 ${row[4]}`; // 顯示題號和分類
+      document.getElementById('word').textContent = row[0]; // A列
+      document.getElementById('meaning').textContent = row[2]; // C列
+      document.getElementById('answer').value = '';
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('hiragana').style.display = 'none';
+      document.getElementById('nextBtn').style.display = 'none';
+      document.getElementById('submitBtn').style.display = 'inline';
+      document.getElementById('review').style.display = 'none';
+      document.getElementById('restartBtn').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+    }
+
+    function checkAnswer() {
+      const userAnswer = document.getElementById('answer').value;
+      const correctAnswer = quizData[currentIndex][1];
+      const resultDiv = document.getElementById('result');
+      const hiraganaDiv = document.getElementById('hiragana');
+
+      userAnswers[currentIndex] = userAnswer;
+      if (userAnswer === correctAnswer) {
+        score++;
+        resultDiv.textContent = '正確！';
+        resultDiv.style.color = '#27ae60';
+      } else {
+        resultDiv.textContent = `答案：${correctAnswer}`;
+        resultDiv.style.color = '#e74c3c';
+      }
+      document.getElementById('score').textContent = `得分: ${score}/${quizData.length}`;
+      resultDiv.style.display = 'block';
+      hiraganaDiv.textContent = quizData[currentIndex][3];
+      hiraganaDiv.style.display = 'block';
+      document.getElementById('submitBtn').style.display = 'none';
+      document.getElementById('nextBtn').style.display = 'block';
+    }
+
+    function nextQuestion() {
+      currentIndex++;
+      if (currentIndex < quizData.length) {
+        showQuestion(currentIndex);
+      } else {
+        showReview();
+      }
+    }
+
+    function showReview() {
+      const reviewDiv = document.getElementById('review');
+      reviewDiv.innerHTML = '<h2>測驗結果</h2>';
+      reviewDiv.innerHTML += `
+        <div class="question-row">
+          <table>
+            <tr>
+              <th></th>
+              <th>題目</th>
+              <th>你的答案</th>
+              <th>正確答案</th>
+              <th>平假名</th>
+            </tr>
+          </table>
+        </div>
+      `;
+      quizData.forEach((row, i) => {
+        const userAnswerFormatted = (userAnswers[i] || '未回答').replace(/,/g, '\n');
+        const correctAnswerFormatted = row[1].replace(/,/g, '\n');
+        reviewDiv.innerHTML += `
+          <div class="question-row">
+            <table>
+              <tr>
+                <th>${i + 1}</th>
+                <td>${row[0]}</td>
+                <td>${userAnswerFormatted}</td>
+                <td>${correctAnswerFormatted}</td>
+                <td>${row[3]}</td>
+              </tr>
+            </table>
+          </div>
+        `;
+      });
+      reviewDiv.style.display = 'block';
+      document.getElementById('question').style.display = 'none';
+      document.getElementById('restartBtn').style.display = 'block';
+    }
+
+    function speakWord() {
+      const word = quizData[currentIndex][0];
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = 'ja-JP';
+      speechSynthesis.speak(utterance);
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+    }
+
+    window.onload = loadQuiz;
+  </script>
+</body>
+</html>

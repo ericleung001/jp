@@ -2,48 +2,49 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>詞語測試</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #f4f7f9;
       text-align: center;
-      padding: 50px;
+      padding: 5%;
       margin: 0;
       position: relative;
       min-height: 100vh;
     }
     #score {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      font-size: 18px;
+      top: 1rem;
+      left: 1rem;
+      font-size: 1.8rem;
       color: #2c3e50;
       background-color: #fff;
-      padding: 5px 15px;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 0.5rem 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.1);
     }
     #question-number {
-      font-size: 24px;
+      font-size: 2.4rem;
       color: #34495e;
-      margin-bottom: 20px;
+      margin-bottom: 2rem;
     }
     #word, #meaning {
-      margin: 20px 0;
-      font-size: 24px;
+      margin: 2rem 0;
+      font-size: 2.4rem;
       color: #34495e;
     }
     #speakBtn, #submitBtn, #nextBtn, #restartBtn {
-      padding: 10px 20px;
-      font-size: 16px;
+      padding: 1rem 2rem;
+      font-size: 1.6rem;
       border: none;
-      border-radius: 5px;
+      border-radius: 0.5rem;
       background-color: #3498db;
       color: #fff;
       cursor: pointer;
       transition: background-color 0.3s ease, transform 0.2s ease;
-      margin: 5px;
+      margin: 0.5rem;
     }
     #speakBtn:hover, #submitBtn:hover, #nextBtn:hover, #restartBtn:hover {
       background-color: #2980b9;
@@ -53,50 +54,52 @@
       transform: scale(0.95);
     }
     #answer {
-      padding: 10px;
-      width: 200px;
-      font-size: 16px;
+      padding: 1rem;
+      width: 50%;
+      max-width: 300px;
+      font-size: 1.6rem;
       border: 2px solid #3498db;
-      border-radius: 5px;
+      border-radius: 0.5rem;
       transition: border-color 0.3s ease;
     }
     #answer:focus {
       outline: none;
       border-color: #2980b9;
-      box-shadow: 0 0 5px rgba(41, 128, 185, 0.5);
+      box-shadow: 0 0 0.5rem rgba(41, 128, 185, 0.5);
     }
     #input-container {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 10px;
+      gap: 1rem;
+      margin: 2rem 0;
     }
     #result {
-      margin-top: 20px;
-      font-size: 20px;
+      margin-top: 2rem;
+      font-size: 2rem;
       display: none;
     }
     #hiragana {
-      margin-top: 10px;
-      font-size: 20px;
+      margin-top: 1rem;
+      font-size: 2rem;
       color: #27ae60;
       display: none;
     }
     #review {
-      margin-top: 30px;
+      margin-top: 3rem;
       display: none;
     }
     table {
-      width: 80%;
+      width: 90%;
       margin: 0 auto;
       border-collapse: collapse;
     }
     th, td {
       border: 1px solid #ddd;
-      padding: 10px;
+      padding: 1rem;
       text-align: center;
-      font-size: 16px;
-      width: 120px;
+      font-size: 1.6rem;
+      width: 20%;
       max-width: 120px;
       overflow-wrap: break-word;
     }
@@ -106,15 +109,52 @@
     .question-row {}
     #nextBtn-container {
       position: absolute;
-      left: 20px;
+      left: 2rem;
       top: 50%;
       transform: translateY(-50%);
       text-align: left;
     }
     #error {
       color: #e74c3c;
-      margin-top: 20px;
+      margin-top: 2rem;
+      font-size: 1.6rem;
       display: none;
+    }
+    /* 媒體查詢：適配 iOS 和移動設備 */
+    @media (max-width: 768px) {
+      #score {
+        font-size: 1.4rem;
+        padding: 0.3rem 1rem;
+      }
+      #question-number, #word, #meaning, #result, #hiragana {
+        font-size: 1.8rem;
+      }
+      #speakBtn, #submitBtn, #nextBtn, #restartBtn {
+        padding: 0.8rem 1.5rem;
+        font-size: 1.4rem;
+      }
+      #answer {
+        width: 70%;
+        font-size: 1.4rem;
+      }
+      #input-container {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      table {
+        width: 100%;
+      }
+      th, td {
+        font-size: 1.4rem;
+        padding: 0.8rem;
+      }
+      #nextBtn-container {
+        position: fixed;
+        left: 1rem;
+        top: auto;
+        bottom: 1rem;
+        transform: none;
+      }
     }
   </style>
 </head>
@@ -159,10 +199,9 @@
         currentData = data.values || [];
         if (currentData.length === 0) throw new Error('數據為空');
 
-        // 過濾分類並移除第一行（標題行）
         const filteredData = currentData.slice(1).filter(row => {
-          if (row.length < 5) return false; // 確保每行至少有5列
-          const rowCategory = row[4] ? row[4].trim() : ''; // E列分類，去除空格
+          if (row.length < 5) return false;
+          const rowCategory = row[4] ? row[4].trim() : '';
           console.log(`行數據: ${row}, 分類: ${rowCategory}, 目標分類: ${category}`);
           return rowCategory === category;
         });
@@ -196,9 +235,9 @@
         showError('題目數據格式錯誤');
         return;
       }
-      document.getElementById('question-number').textContent = `${index + 1}/10 ${row[4]}`; // 顯示題號和分類
-      document.getElementById('word').textContent = row[0]; // A列
-      document.getElementById('meaning').textContent = row[2]; // C列
+      document.getElementById('question-number').textContent = `${index + 1}/10 ${row[4]}`;
+      document.getElementById('word').textContent = row[0];
+      document.getElementById('meaning').textContent = row[2];
       document.getElementById('answer').value = '';
       document.getElementById('result').style.display = 'none';
       document.getElementById('hiragana').style.display = 'none';

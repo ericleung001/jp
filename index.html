@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>日文詞語測試</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f7f9;
+      text-align: center;
+      padding: 50px;
+      margin: 0;
+    }
+    h1 {
+      color: #2c3e50;
+      font-size: 2.5em;
+      margin-bottom: 30px;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    select {
+      padding: 12px 20px;
+      font-size: 16px;
+      border: 2px solid #3498db;
+      border-radius: 5px;
+      background-color: #fff;
+      color: #2c3e50;
+      margin-right: 10px;
+      transition: border-color 0.3s ease;
+    }
+    select:focus {
+      outline: none;
+      border-color: #2980b9;
+      box-shadow: 0 0 5px rgba(41, 128, 185, 0.5);
+    }
+    button {
+      padding: 12px 25px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #3498db;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    button:hover {
+      background-color: #2980b9;
+      transform: scale(1.05);
+    }
+    button:active {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body>
+  <h1>日文詞語測試</h1>
+  <select id="categorySelect">
+    <option value="">請選擇分類</option>
+  </select>
+  <button onclick="startQuiz()">開始測試</button>
+
+  <script>
+    async function fetchCategories() {
+      const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets/1rPV6OItEhA9VSRfiUWwem6KNzMUzeSNmDEzaoDIH3FM/values/data?key=AIzaSyDLNfSUG5lZdlF5OJGYSJCWanvQdTSytm0');
+      const data = await response.json();
+      const categories = [...new Set(data.values.map(row => row[4]))]; // E列分類去重
+      const select = document.getElementById('categorySelect');
+      categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        select.appendChild(option);
+      });
+    }
+
+    function startQuiz() {
+      const category = document.getElementById('categorySelect').value;
+      if (category) {
+        window.location.href = `quiz.html?category=${category}`;
+      } else {
+        alert('請選擇一個分類！');
+      }
+    }
+
+    fetchCategories();
+  </script>
+</body>
+</html>

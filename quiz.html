@@ -191,7 +191,7 @@
         return;
       }
       try {
-        const response = await fetch('YOUR_GOOGLE_SHEET_API_URL');
+        const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets/1rPV6OItEhA9VSRfiUWwem6KNzMUzeSNmDEzaoDIH3FM/values/data?key=AIzaSyDLNfSUG5lZdlF5OJGYSJCWanvQdTSytm0');
         if (!response.ok) throw new Error('無法獲取數據');
         const data = await response.json();
         console.log('API 回應數據:', data);

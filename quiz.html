@@ -120,7 +120,6 @@
       font-size: 1.6rem;
       display: none;
     }
-    /* 媒體查詢：適配 iOS 和移動設備 */
     @media (max-width: 768px) {
       #score {
         font-size: 1.4rem;
@@ -192,19 +191,26 @@
         return;
       }
       try {
-        const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets/1rPV6OItEhA9VSRfiUWwem6KNzMUzeSNmDEzaoDIH3FM/values/data?key=AIzaSyDLNfSUG5lZdlF5OJGYSJCWanvQdTSytm0');
+        const response = await fetch('YOUR_GOOGLE_SHEET_API_URL');
         if (!response.ok) throw new Error('無法獲取數據');
         const data = await response.json();
         console.log('API 回應數據:', data);
         currentData = data.values || [];
         if (currentData.length === 0) throw new Error('數據為空');
 
-        const filteredData = currentData.slice(1).filter(row => {
-          if (row.length < 5) return false;
-          const rowCategory = row[4] ? row[4].trim() : '';
-          console.log(`行數據: ${row}, 分類: ${rowCategory}, 目標分類: ${category}`);
-          return rowCategory === category;
-        });
+        let filteredData;
+        if (category === '全部') {
+          // 選擇“全部”時，隨機從所有詞語中選取
+          filteredData = currentData.slice(1).filter(row => row.length >= 5); // 跳過標題行，確保每行有5列
+        } else {
+          // 按分類過濾
+          filteredData = currentData.slice(1).filter(row => {
+            if (row.length < 5) return false;
+            const rowCategory = row[4] ? row[4].trim() : '';
+            console.log(`行數據: ${row}, 分類: ${rowCategory}, 目標分類: ${category}`);
+            return rowCategory === category;
+          });
+        }
 
         if (filteredData.length === 0) throw new Error(`分類 ${category} 沒有題目`);
         console.log(`過濾後數據 (${category}):`, filteredData);
@@ -235,7 +241,7 @@
         showError('題目數據格式錯誤');
         return;
       }
-      document.getElementById('question-number').textContent = `${index + 1}/10 ${row[4]}`;
+      document.getElementById('question-number').textContent = `${index + 1}/10 ${row[4] || '全部'}`; // 顯示題號和分類
       document.getElementById('word').textContent = row[0];
       document.getElementById('meaning').textContent = row[2];
       document.getElementById('answer').value = '';
